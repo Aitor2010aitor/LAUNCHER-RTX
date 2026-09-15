@@ -1,0 +1,8 @@
+{
+  "name": "YimMenu",
+  "description": "Shaders mejorados para GTA V Legacy. Mejora visual sin impacto en rendimiento.",
+  "key": "F9",
+  "badge": "LEGACY",
+  "badgeColor": "amber",
+  "icon": "deployed_code"
+}

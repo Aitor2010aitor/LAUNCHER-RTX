@@ -1,0 +1,78 @@
+{
+  "name": "rtx-gta-launcher",
+  "version": "1.0.0",
+  "description": "RTX GTA V LAUNCHER - Inyeccion de mods para GTA V",
+  "main": "main.js",
+  "author": {
+    "name": "SYN-CORE",
+    "email": "dev@syn-core.com"
+  },
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "build": "electron-builder --win nsis",
+    "build:portable": "electron-builder --win portable",
+    "build:dir": "electron-builder --win dir",
+    "publish": "electron-builder --win nsis --publish always",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "com.rtx.gta.launcher",
+    "productName": "RTX GTA LAUNCHER",
+    "copyright": "Copyright © 2026 RTX",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "artifactName": "RTX-GTA-Launcher-${version}.${ext}",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "RTX GTA Launcher"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "Aitor2010aitor",
+      "repo": "LAUNCHER-RTX",
+      "releaseType": "release"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "mods/**/*",
+      "assets/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "mods",
+        "to": "mods"
+      }
+    ],
+    "asar": false
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9",
+    "koffi": "^2.8.0"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "allowScripts": {
+    "electron@28.3.3": true,
+    "koffi@2.16.3": true
+  }
+}
