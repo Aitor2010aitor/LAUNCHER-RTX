@@ -3,3 +3,13 @@ dist/
 *.log
 .DS_Store
 Thumbs.db
+src/
+main.js
+preload.js
+assets/
+docs/
+mods/
+package.json
+package-lock.json
+.gitignore
+README.md
