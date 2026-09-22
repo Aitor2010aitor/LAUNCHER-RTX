@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:;">
+  <title>RTX GTA V LAUNCHER</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Chivo:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app">
+    <div class="titlebar">
+      <div class="titlebar-left">
+        <div class="logo-icon">
+          <img src="../assets/icon.ico" alt="RTX" style="width:24px;height:24px">
+        </div>
+        <div class="logo-text">
+          <span class="logo-name">RTX</span>
+          <span class="logo-sub">GTA V LAUNCHER</span>
+        </div>
+        <div class="status-pill" id="status-pill">
+          <span class="status-dot" id="status-dot"></span>
+          <span class="status-text" id="status-text">GTA V: Buscando...</span>
+        </div>
+      </div>
+      <div class="titlebar-buttons">
+        <button class="tb-btn" id="btn-minimize"><span class="material-symbols-outlined" style="font-size:16px">minimize</span></button>
+        <button class="tb-btn" id="btn-maximize"><span class="material-symbols-outlined" style="font-size:16px">crop_square</span></button>
+        <button class="tb-btn tb-close" id="btn-close"><span class="material-symbols-outlined" style="font-size:16px">close</span></button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <nav class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">MODOS PRINCIPALES</div>
+          <!-- AGREGAR BOTONES NAV AQUI -->
+        </div>
+        <div class="sidebar-bottom">
+          <!-- FOOTER NAV AQUI -->
+        </div>
+      </nav>
+
+      <!-- VISTAS AQUI -->
+      <main class="content" id="view-mods">
+        <div class="content-header">
+          <h1 class="page-title" id="page-title">GTA ENHANCED</h1>
+          <span class="version-badge" id="version-badge">MOD ENGINE v4.2</span>
+        </div>
+        <p class="page-desc" id="page-desc">Descripcion</p>
+        <div class="mods-grid" id="mods-grid"></div>
+      </main>
+    </div>
+
+    <div class="telemetry-bar">
+      <span class="telemetry-item">
+        <span class="material-symbols-outlined" style="font-size:12px">memory</span>
+        <span id="tel-process">PID: ---</span>
+      </span>
+      <span class="telemetry-item">
+        <span class="material-symbols-outlined" style="font-size:12px">dns</span>
+        <span id="tel-dlls">DLLs: 0</span>
+      </span>
+      <span class="telemetry-item">
+        <span class="material-symbols-outlined" style="font-size:12px">check_circle</span>
+        <span id="tel-status">Sistema OK</span>
+      </span>
+      <span class="telemetry-item" style="margin-left:auto">
+        <span class="material-symbols-outlined" style="font-size:12px">tag</span>
+        <span id="tel-version">v1.0.0</span>
+      </span>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <div class="update-overlay" id="update-overlay" style="display:none"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
