@@ -8,16 +8,18 @@ y lo que queda por hacer.
 
 ## INDICE
 1. Resumen del Proyecto
-2. Repositorios y Tokens
-3. Stack Tecnico y Dependencias
-4. Codigo Completo (main.js, preload.js, renderer.js, index.html, styles.css, package.json, mod.json, installer.nsh)
-5. Sistema de Encriptacion
-6. Sistema de Mods
-7. Sistema de Scripts
-8. Sistema de Auto-Update
-9. Build y Publish
-10. Historial de Versiones
-11. Problemas Conocidos y Pendientes
+2. Repositorios y Tokens (TOKEN EXPLICITO AQUI)
+3. Stack Tecnico y DEPENDENCIAS EXPLICADAS
+4. Como PASAR ARCHIVOS a un EXTERNO (paso a paso)
+5. Como CIFRAR un DLL nuevo (paso a paso)
+6. Como DESCIFRAR un archivo .enc (paso a paso)
+7. Codigo Completo
+8. Sistema de Mods
+9. Sistema de Scripts
+10. Sistema de Auto-Update
+11. Build y Publish
+12. Historial de Versiones
+13. Problemas Conocidos y Pendientes
 
 ---
 
@@ -38,24 +40,33 @@ Lancher Electron para GTA V que permite:
 
 ## 2. REPOSITORIOS Y TOKENS
 
+### TOKEN DE GITHUB (CRITICO - EXPLICACION)
+
+**Token:** `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`
+
+- **Que es:** Un "password" de GitHub que permite acceso al repositorio sin pedir usuario/contraseña cada vez
+- **Donde se usa:**
+  1. **Auto-update del launcher:** Cuando el launcher busca si hay nueva version, envia este token en las cabeceras HTTP para poder descargar releases privadas
+  2. **Fetch de scripts:** Cuando descarga scripts desde el repo RTX-SERVER, usa este token para autenticarse en la GitHub API
+  3. **Publish:** Cuando se hace `electron-builder --publish always`, usa este token para subir el nuevo release a GitHub
+- **Donde se guarda:** En `main.js` se lee con `process.env.RTX_GITHUB_TOKEN`. Se pone como variable de entorno antes de ejecutar: `$env:GH_TOKEN = "ghp_..."` en PowerShell, o `set GH_TOKEN=ghp_...` en cmd
+- **Scope:** Acceso completo a TODOS los repositorios de Aitor2010aitor
+- **Expira:** NUNCA (token personal de infinita duracion)
+- **NO poner en el codigo fuente como string hardcodeado** - se usa variable de entorno para seguridad
+
 ### Repositorios
+
 - **Release (binarios)**: https://github.com/Aitor2010aitor/LAUNCHER-RTX
   - Remote: origin
   - Rama: main
   - Tag actual: v1.5.3
 
 - **Source (codigo)**: https://github.com/Aitor2010aitor/lancher-codigofunte-
-  - Remote: source (por agregar)
   - Rama: main
+  - Commit actual: 76a81e0
 
 - **Scripts Enhanced**: https://github.com/Aitor2010aitor/RTX-SERVER-/tree/main/COSAS DE YIM /SCRIPTS ENHACED
 - **Scripts Legacy**: https://github.com/Aitor2010aitor/RTX-SERVER-/tree/main/COSAS DE YIM /SCRIPTS LEGACY
-
-### Token GitHub
-```
-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
-```
-Scope: repo completo, infinito (no expira)
 
 ### Discord
 ```
@@ -74,70 +85,192 @@ Get-Process electron -ErrorAction SilentlyContinue | Stop-Process -Force; Start-
 
 ---
 
-## 3. STACK TECNICO Y DEPENDENCIAS
+## 3. STACK TECNICO Y DEPENDENCIAS EXPLICADAS
 
 ### Dependencias runtime (package.json dependencies)
-- `adm-zip`: ^0.6.1 - Extraccion de archivos ZIP
-- `electron-updater`: ^6.3.9 - Auto-update desde GitHub Releases
-- `koffi`: ^2.8.0 - Llamadas a Win32 API (reemplazo de ffi-napi)
+
+**`koffi`: ^2.8.0**
+- **Que hace:** Permite llamar funciones de DLLs de Windows (Win32 API) desde JavaScript/Node.js
+- **Para que sirve:** Para inyectar DLLs en GTA V - llama a funciones como OpenProcess, VirtualAllocEx, WriteProcessMemory, CreateRemoteThread, LoadLibraryW
+- **Alternativa intentada:** `ffi-napi` - NO funciono porque daba error `_Inout_` qualifier con MSVC
+- **Como funciona:** Cargas `kernel32.dll` con `koffi.load('kernel32.dll')` y luego llamas funciones con `kernel32.func('NombreFuncion', 'tipo_retorno', ['tipo_param1', 'tipo_param2'])`
+
+**`adm-zip`: ^0.6.1**
+- **Que hace:** Permite crear, leer y extraer archivos ZIP desde Node.js sin dependencias externas
+- **Para que sirve:** Para extraer archivos .zip que contienen scripts de GTA V
+- **Como funciona:** `const zip = new AdmZip(ruta_zip); zip.extractAllTo(destino, true);`
+
+**`electron-updater`: ^6.3.9**
+- **Que hace:** Sistema de auto-update que verifica si hay nueva version en GitHub Releases y la descarga
+- **Para que sirve:** Cuando el launcher detecta que hay una version nueva disponible, la descarga automaticamente
+- **Configuracion:** `autoDownload: true`, `autoInstallOnAppQuit: false` (NO instala automaticamente - pide al usuario), `disableWebInstaller: true`
 
 ### DevDependencies
-- `electron`: ^28.0.0 - Framework Electron
-- `electron-builder`: ^25.1.8 - Build NSIS installer
 
-### Configuraciones importantes de package.json
-```json
-{
-  "name": "rtx-gta-launcher",
-  "version": "1.6.0",
-  "build": {
-    "appId": "com.rtx.gta.launcher",
-    "productName": "RTX GTA LAUNCHER",
-    "copyright": "Copyright (c) 2026 RTX",
-    "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
-      "icon": "assets/icon.ico",
-      "artifactName": "RTX-GTA-Launcher-${version}.${ext}",
-      "requestedExecutionLevel": "requireAdministrator",
-      "publisherName": "RTX"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "RTX GTA Launcher",
-      "include": "build/installer.nsh",
-      "runAfterFinish": true
-    },
-    "publish": {
-      "provider": "github",
-      "owner": "Aitor2010aitor",
-      "repo": "LAUNCHER-RTX",
-      "releaseType": "release"
-    },
-    "files": ["main.js", "preload.js", "src/**/*", "assets/**/*"],
-    "asar": false,
-    "allowScripts": {
-      "electron@28.3.3": true,
-      "koffi@2.16.3": true
-    }
-  }
-}
-```
+**`electron`: ^28.0.0 (version exacta 28.3.3)**
+- **Que hace:** Framework que permite crear aplicaciones de escritorio con HTML/CSS/JS
+- **Version especifica:** 28.3.3 (NO usar ^28 porque el runtime debe ser exacta)
+- **Configuracion electron-builder:** `allowScripts: {"electron@28.3.3": true, "koffi@2.16.3": true}` - permite que electron-builder ejecute scripts postinstall
 
-### Notas tecnicas
-- `asar: false` - No usar asar, necesario para que los archivos .enc sean accesibles
-- `contextIsolation: true` - Seguridad
-- `nodeIntegration: false` - Seguridad
-- `sandbox: true` - Seguridad
-- `requestedExecutionLevel: requireAdministrator` - Para inyeccion de DLLs
-- Electron 28.3.3 específico (no ^28 en runtime)
+**`electron-builder`: ^25.1.8**
+- **Que hace:** Empaqueta el proyecto Electron en un ejecutable .exe para Windows con instalador NSIS
+- **Configuracion:** `asar: false` (NO empaquetar en asar - necesario para que los archivos .enc sean accesibles), `target: "nsis"`, `requestedExecutionLevel: "requireAdministrator"`
+
+### Notas tecnicas importantes
+- `asar: false` - NO empaquetar como asar (porque los .enc necesitan estar accesibles como archivos normales)
+- `contextIsolation: true` - Seguridad: separa el renderer del main process
+- `nodeIntegration: false` - Seguridad: no expone Node.js al renderer
+- `sandbox: true` - Seguridad: ejecuta el renderer en entorno sandbox
+- `requestedExecutionLevel: requireAdministrator` - Para inyeccion de DLLs se necesita admin
+- `CSC_IDENTITY_AUTO_DISCOVERY = "false"` - No hay firma de codigo digital
+- `CSC_LINK = ""` y `WIN_CSC_LINK = ""` - Sin certificado de firma
+- `allowScripts: {"electron@28.3.3": true, "koffi@2.16.3": true}` - Koffi necesita compilar native modules
 
 ---
 
-## 4. CODIGO COMPLETO
+## 4. COMO PASAR ARCHIVOS A UN EXTERNO (PASO A PASO)
+
+### Opcion A: Pendrive/USB (mas rapido)
+1. Conecta un pendrive USB al PC
+2. El pendrive aparece como unidad (ej: E:, F:, D:)
+3. Copia TODOS los archivos del escritorio a la raiz del pendrive
+4. Desconecta el pendrive del PC principal
+5. Conecta el pendrive al OTRO PC (192.168.1.150)
+6. Abre el pendrive y copia los archivos al escritorio de ese PC
+7. Listo
+
+### Opcion B: Disco externo (mismo proceso que pendrive)
+- El disco externo que ya tienes en D:\ es tu medio
+- Copia los archivos del escritorio a D:\export_rta\
+- Desconecta el disco externo
+- Conectalo al otro PC
+- Copia del disco externo al escritorio del otro PC
+
+### Archivos NECESARIOS en el pendrive/disco (10 archivos, sin librerias):
+```
+main.js                        (34,921 bytes)
+preload.js                     (1,836 bytes)
+package.json                   (2,008 bytes)
+contexto.txt                   (19,275 bytes)
+src/index.html                 (15,267 bytes)
+src/styles.css                 (18,149 bytes)
+src/renderer.js                (22,644 bytes)
+build/installer.nsh            (1,066 bytes)
+build/app.manifest             (571 bytes)
+assets/icon.ico                (198,378 bytes)
+```
+
+**NO copiar:**
+- `node_modules/` (tiene miles de archivos, es basura)
+- `dist/` (se genera al hacer build)
+- `.git/` (es configuracion de git)
+
+---
+
+## 5. COMO CIFRAR UN DLL NUEVO (PASO A PASO)
+
+### Requisitos previos
+- Tener Node.js instalado
+- Tener el archivo .dll que quieres cifrar
+- Conocer la clave secreta: `RTX2026-GTA5-LAUNCHER-SECURE-ENCRYPT-KEY`
+
+### Paso 1: Abre PowerShell en la carpeta donde esta el DLL
+```powershell
+cd C:\Users\Admin\Desktop\launcher\launcher
+```
+
+### Paso 2: Ejecuta este comando para cifrar el DLL
+```powershell
+node -e "const crypto=require('crypto'),fs=require('fs');const K=crypto.createHash('sha256').update('RTX2026-GTA5-LAUNCHER-SECURE-ENCRYPT-KEY').digest();const d=fs.readFileSync('TU_DLL.dll');const iv=crypto.randomBytes(16);const c=crypto.createCipheriv('aes-256-cbc',K,iv);let e=c.update(d);e=Buffer.concat([e,c.final()]);fs.writeFileSync('TU_DLL.enc',Buffer.concat([iv,e]));console.log('CIFRADO:',fs.statSync('TU_DLL.enc').size,'bytes');const v=fs.readFileSync('TU_DLL.enc');const di=v.slice(0,16),ct=v.slice(16);const dc=crypto.createDecipheriv('aes-256-cbc',K,di);let r=dc.update(ct);r=Buffer.concat([r,dc.final()]);console.log('VERIFICACION MZ:',r[0]===0x4D&&r[1]===0x5A);"
+```
+
+**Reemplaza `TU_DLL.dll` por el nombre del archivo DLL real.**
+
+### Paso 3: Verifica el resultado
+- Deberia ver `CIFRADO: X bytes`
+- Deberia ver `VERIFICACION MZ: true` (significa que al desencriptar se obtiene un DLL valido con cabecera MZ)
+
+### Paso 4: Renombra el archivo .enc resultante
+- `YimMenuV2.dll` → `YimMenuV2.enc`
+- Ponlo en `src/mods/GTA Enhanced/G MENU V2/YimMenuV2.enc`
+- Crea el `mod.json` correspondiente
+
+### Paso 5: Borra el DLL sin cifrar (IMPORTANTE)
+```powershell
+Remove-Item "TU_DLL.dll" -Force
+```
+
+### REGLAS IMPORTANTES DE ENCRIPTACION:
+1. **NO agregar PKCS7 manual** - `cipher.final()` YA agrega padding PKCS7 automaticamente
+2. Si agregas padding manual, se produce doble padding y el archivo NO se puede desencriptar (error BAD_DECRYPT)
+3. El IV (16 bytes) se antepone al ciphertext - formato: `[iv(16)][ciphertext]`
+4. Para verificar: el archivo .enc debe tener exactamente 16 bytes mas que el .dll original
+
+---
+
+## 6. COMO DESCIFRAR UN ARCHIVO .enc (PASO A PASO)
+
+### El launcher hace esto automaticamente con `decryptFile()` en main.js:
+
+```javascript
+const crypto = require('crypto');
+
+function decryptFile(encPath) {
+  const data = fs.readFileSync(encPath);
+
+  // Formato del archivo .enc: [iv(16 bytes)][ciphertext]
+  const iv = data.slice(0, 16);
+  const ct = data.slice(16);
+
+  // Derivar clave desde passphrase
+  const ENC_KEY = crypto.createHash('sha256').update('RTX2026-GTA5-LAUNCHER-SECURE-ENCRYPT-KEY').digest();
+
+  // Desenciptar
+  const decipher = crypto.createDecipheriv('aes-256-cbc', ENC_KEY, iv);
+  decipher.setAutoPadding(false);
+  let dec = Buffer.concat([decipher.update(ct), decipher.final()]);
+
+  // Quitar padding PKCS7 (solo UNA vez)
+  const padLen = dec[dec.length - 1];
+  if (padLen > 0 && padLen <= 16) {
+    dec = dec.slice(0, dec.length - padLen);
+  }
+  return dec;
+}
+```
+
+### Para verificar manualmente:
+```javascript
+const crypto = require('crypto');
+const fs = require('fs');
+const ENC_KEY = crypto.createHash('sha256').update('RTX2026-GTA5-LAUNCHER-SECURE-ENCRYPT-KEY').digest();
+const v = fs.readFileSync('archivo.enc');
+const iv = v.slice(0, 16);
+const ct = v.slice(16);
+const decipher = crypto.createDecipheriv('aes-256-cbc', ENC_KEY, iv);
+decipher.setAutoPadding(false);
+let dec = Buffer.concat([decipher.update(ct), decipher.final()]);
+const padLen = dec[dec.length - 1];
+if (padLen > 0 && padLen <= 16) dec = dec.slice(0, dec.length - padLen);
+console.log('MZ:', dec[0] === 0x4D && dec[1] === 0x5A);
+console.log('Tamaño:', dec.length);
+```
+
+### ALGORITMO DE CIFRADO DETALLADO:
+1. **Algoritmo:** AES-256-CBC (Advanced Encryption Standard, 256-bit key, Cipher Block Chaining)
+2. **Clave:** SHA-256 hash de `'RTX2026-GTA5-LAUNCHER-SECURE-ENCRYPT-KEY'` (64 caracteres hex = 256 bits)
+3. **IV (Initialization Vector):** 16 bytes aleatorios - diferente cada vez que se cifra
+4. **Padding:** PKCS7 - el bloque se rellena para que sea multiplo de 16 bytes
+5. **Formato archivo .enc:** `[IV(16 bytes)][CIPHERTEXT]`
+6. **Por que AES-256-CBC:** Es el estandar de la industria para cifrado simetrico. Es lo que usa Windows para proteger datos sensibles.
+
+### FORMATOS SOPORTADOS EN main.js:
+- **v1 (legacy):** `[iv(16)][ciphertext]` con PKCS7 padding - USADO POR TODOS LOS MODS ACTUALES
+- **v2 (nuevo):** `[version(1)=0x01][salt(16)][nonce(12)][tag(16)][ciphertext]` con AES-256-GCM - NO USADO TODAVIA
+
+---
+
+## 7. CODIGO COMPLETO
 
 ### main.js (927 lineas)
 Ruta: C:\Users\Admin\Desktop\launcher\launcher\main.js
@@ -162,6 +295,7 @@ const MODS_DIR = path.join(__dirname, 'src', 'mods');
 const DLL_DIR = app.isPackaged ? path.dirname(app.getPath('exe')) : __dirname;
 const SCRIPTS_REPO = 'Aitor2010aitor/RTX-SERVER-';
 const TARGET_PROCESSES = ['GTA5.exe', 'GTA5_Enhanced.exe'];
+const GITHUB_TOKEN = process.env.RTX_GITHUB_TOKEN || '';
 ```
 
 Estructura SCRIPTS_CONFIG:
@@ -248,7 +382,6 @@ Elementos:
 Ver seccion 3 arriba.
 
 ### mod.json (G MENU V2)
-Ruta: C:\Users\Admin\Desktop\launcher\launcher\src\mods\GTA Enhanced\G MENU V2\mod.json
 ```json
 {
   "name": "YimMenu V2",
@@ -261,60 +394,11 @@ Ruta: C:\Users\Admin\Desktop\launcher\launcher\src\mods\GTA Enhanced\G MENU V2\m
 ```
 
 ### installer.nsh
-Ruta: C:\Users\Admin\Desktop\launcher\launcher\build\installer.nsh
-Pagina de finish custom:
-- Muestra ruta de instalacion
-- Boton Copiar (copia al portapapeles)
-- Aviso de Windows Defender exclusiones
+Pagina de finish custom con ruta de instalacion, boton Copiar, y aviso de Windows Defender exclusiones.
 
 ---
 
-## 5. SISTEMA DE ENCRIPTACION
-
-### Algoritmo
-- AES-256-CBC (legacy v1) / AES-256-GCM (v2)
-- Key derivation: SHA-256 de 'RTX2026-GTA5-LAUNCHER-SECURE-ENCRYPT-KEY'
-- IV: 16 bytes random (para CBC) o 12 bytes random (para GCM)
-- Format v1: [iv(16)][ciphertext] (PKCS7 padding)
-- Format v2: [version(1)=0x01][salt(16)][nonce(12)][tag(16)][ciphertext] (GCM)
-- Key derivation for v2: scryptSync(passphrase, salt, 32, {N: 16384, r: 8, p: 1})
-
-### Encriptar un DLL nuevo (COMANDO)
-```javascript
-const crypto = require('crypto');
-const ENC_KEY = crypto.createHash('sha256').update('RTX2026-GTA5-LAUNCHER-SECURE-ENCRYPT-KEY').digest();
-const data = fs.readFileSync('archivo.dll');
-const iv = crypto.randomBytes(16);
-const cipher = crypto.createCipheriv('aes-256-cbc', ENC_KEY, iv);
-let enc = cipher.update(data);
-enc = Buffer.concat([enc, cipher.final()]);
-// NO agregar PKCS7 manual - cipher.final() ya lo hace
-fs.writeFileSync('archivo.enc', Buffer.concat([iv, enc]));
-```
-
-### Verificar encriptacion
-```javascript
-const v = fs.readFileSync('archivo.enc');
-const iv = v.slice(0, 16);
-const ct = v.slice(16);
-const decipher = crypto.createDecipheriv('aes-256-cbc', ENC_KEY, iv);
-let dec = Buffer.concat([decipher.update(ct), decipher.final()]);
-// Verificar MZ header
-console.log('MZ:', dec[0] === 0x4D && dec[1] === 0x5A);
-```
-
-### ENCRIPTACION ACTUAL DE MODS
-| Mod | Archivo .enc | Tamaño | Formato |
-|-----|-------------|--------|---------|
-| YimMenuV2 | YimMenuV2.enc | 6,921,760 bytes | v1 CBC |
-| YimMenuV2-RojoT | YimMenuV2-RojoT.enc | 10,4xx KB | v1 CBC |
-| legacy_mod | legacy_mod.enc | 11,5xx KB | v1 CBC |
-
-**NOTA**: El error BAD_DECRYPT en v1.5.3 se produjo por agregar padding PKCS7 manual despues de `cipher.final()`. Se corrigio eliminando el padding manual.
-
----
-
-## 6. SISTEMA DE MODS
+## 8. SISTEMA DE MODS
 
 ### Estructura de carpetas
 ```
@@ -353,7 +437,7 @@ src/mods/
 
 ---
 
-## 7. SISTEMA DE SCRIPTS
+## 9. SISTEMA DE SCRIPTS
 
 ### Flow
 1. `fetchScripts(gameVersion)` → GitHub API → lista de archivos
@@ -384,7 +468,7 @@ const SCRIPTS_CONFIG = {
 
 ---
 
-## 8. SISTEMA DE AUTO-UPDATE
+## 10. SISTEMA DE AUTO-UPDATE
 
 ### Configuracion
 ```javascript
@@ -413,7 +497,7 @@ SCOPE: repo completo | EXPIRA: Nunca | PROPIETARIO: Aitor2010aitor
 
 ---
 
-## 9. BUILD Y PUBLISH
+## 11. BUILD Y PUBLISH
 
 ### Estructura de archivos del proyecto
 ```
@@ -448,7 +532,7 @@ npx electron-builder --win nsis --publish always
 
 ---
 
-## 10. HISTORIAL DE VERSIONES
+## 12. HISTORIAL DE VERSIONES
 
 | Version | Cambios principales |
 |---------|-------------------|
@@ -471,12 +555,12 @@ npx electron-builder --win nsis --publish always
 
 ---
 
-## 11. PROBLEMAS CONOCIDOS Y PENDIENTES
+## 13. PROBLEMAS CONOCIDOS Y PENDIENTES
 
 ### Build YimMenuV2 desde source (D:\YimMenuBuild) - FUERA DEL LAUNCHER
-- **Estado**: FALLANDO con error LNK2001 en `view_creator.cpp.obj` (unresolved external symbol)
-- **Build system**: CMake + Ninja (reconfigurado desde NMake)
-- **Causa**: Posiblemente falta definir `YIM_MENU_VIEW_CREATOR` o falta incluir un .cpp que define la funcion
+- **Estado:** FALLANDO con error LNK2001 en `view_creator.cpp.obj` (unresolved external symbol)
+- **Build system:** CMake + Ninja (reconfigurado desde NMake)
+- **Causa:** Posiblemente falta definir `YIM_MENU_VIEW_CREATOR` o falta incluir un .cpp que define la funcion
 - **VS 2026 Community** esta instalado, cmake, ninja disponibles
 - **No es un problema del launcher** - es el source code de YimMenuV2 en GitHub
 
@@ -484,14 +568,12 @@ npx electron-builder --win nsis --publish always
 - El usuario quiere crear una nueva interfaz web para reemplazar la UI actual
 - Carpeta existe en C:\Users\Admin\Desktop\launcher\launcher\web\
 - Contiene archivos CSS/HTML/JS base
-- **Pendiente**: migrar la UI actual a esta nueva estructura web
+- **Pendiente:** migrar la UI actual a esta nueva estructura web
 
 ### Otras notas
 - `Select-String` no funciona en cmd.exe (es de PowerShell) - usar `findstr`
 - `&&` no funciona en PowerShell - usar `;` o `cmd /c`
-- El remote `source` para `lancher-codigofunte-` necesita ser agregado
-- Los archivos en `src_repo/` son copia del codigo fuente
-- El archivo `.sourceignore` existe en el repo
+- El remote `source` para `lancher-codigofunte-` ya esta agregado y funcionando
 
 ---
 
@@ -512,15 +594,16 @@ cmake --build D:\YimMenuBuild\build --config RelWithDebInfo
 cmake -B D:\YimMenuBuild\build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOPTIMIZE=YES
 ```
 
-### Encriptacion
-```javascript
-// Encriptar DLL
-const crypto=require('crypto'),fs=require('fs');
-const K=crypto.createHash('sha256').update('RTX2026-GTA5-LAUNCHER-SECURE-ENCRYPT-KEY').digest();
-const d=fs.readFileSync('DLL');const iv=crypto.randomBytes(16);
-const c=crypto.createCipheriv('aes-256-cbc',K,iv);
-let e=c.update(d);e=Buffer.concat([e,c.final()]);
-fs.writeFileSync('ENC',Buffer.concat([iv,e]));
+### Encriptacion (copiar y pegar en PowerShell)
+```powershell
+# CIFRAR un DLL nuevo
+node -e "const crypto=require('crypto'),fs=require('fs');const K=crypto.createHash('sha256').update('RTX2026-GTA5-LAUNCHER-SECURE-ENCRYPT-KEY').digest();const d=fs.readFileSync('archivo.dll');const iv=crypto.randomBytes(16);const c=crypto.createCipheriv('aes-256-cbc',K,iv);let e=c.update(d);e=Buffer.concat([e,c.final()]);fs.writeFileSync('archivo.enc',Buffer.concat([iv,e]));console.log('CIFRADO:',fs.statSync('archivo.enc').size,'bytes');"
+
+# VERIFICAR que se puede desencriptar
+node -e "const crypto=require('crypto'),fs=require('fs');const K=crypto.createHash('sha256').update('RTX2026-GTA5-LAUNCHER-SECURE-ENCRYPT-KEY').digest();const v=fs.readFileSync('archivo.enc');const iv=v.slice(0,16),ct=v.slice(16);const dc=crypto.createDecipheriv('aes-256-cbc',K,iv);let r=dc.update(ct);r=Buffer.concat([r,dc.final()]);console.log('MZ:',r[0]===0x4D&&r[1]===0x5A,'Size:',r.length);"
+
+# BORRAR el DLL sin cifar (IMPORTANTE)
+Remove-Item "archivo.dll" -Force
 ```
 
 ---
@@ -534,6 +617,9 @@ fs.writeFileSync('ENC',Buffer.concat([iv,e]));
 
 ### Codigo fuente del launcher
 - `main.js`, `preload.js`, `package.json`, `src/index.html`, `src/styles.css`, `src/renderer.js`, `build/installer.nsh`, `build/app.manifest`
+
+### Archivo de contexto (este archivo)
+- `contexto.txt` - TODO el contexto completo del proyecto
 
 ---
 
@@ -557,3 +643,5 @@ Este archivo contiene todo el contexto necesario para continuar el desarrollo de
 Fecha de creacion: Septiembre 2026
 Version del launcher: v1.6.0
 Ultima accion: Fix de encriptacion YimMenuV2 y publicacion v1.5.3
+Tokens GitHub: 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
+Repositorios: https://github.com/Aitor2010aitor/lancher-codigofunte- y https://github.com/Aitor2010aitor/LAUNCHER-RTX
