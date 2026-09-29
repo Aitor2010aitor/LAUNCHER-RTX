@@ -21,7 +21,7 @@ Admin elevation requerida para inyeccion de DLLs.
 REPO DE RELEASE (BINARIOS - donde el usuario descarga):
   https://github.com/Aitor2010aitor/LAUNCHER-RTX
   Remote: origin, Rama: main
-  Version actual: v1.6.0
+  Version actual: v1.6.2
   URL descarga: https://github.com/Aitor2010aitor/LAUNCHER-RTX/releases
 
 REPO DE SOURCE (codigo fuente - donde subes tus cambios):
@@ -38,10 +38,13 @@ REPO DE SCRIPTS LEGACY:
 
 DISCORD: https://discord.gg/ftJBSMsgAu
 
-TOKEN GITHUB: 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
-  - Scope: repo completo | Expira: NUNCA
-  - Se usa en: auto-updater, GitHub API fetch-scripts, publish
-  - Se configura como: $env:GH_TOKEN = "ghp_..." en PowerShell antes de build/publish
+TOKEN GITHUB: CADUCADO (da 401 desde 29/09/2026)
+  - El viejo ghp_... del prompt ya NO funciona.
+  - git push funciona igual via Windows Credential Manager (credential.helper = manager).
+  - Para publicar (electron-builder/API) obtener token valido con:
+      $cred = "protocol=https`nhost=github.com`n`n" | git credential fill
+      $env:GH_TOKEN = (($cred | Select-String "password=").Line -replace "^password=","")
+  - Verificar: Invoke-RestMethod https://api.github.com/user -Headers @{Authorization="token $env:GH_TOKEN"}
 
 ---
 
@@ -93,6 +96,7 @@ GTA Enhanced:
 
 GTA Legacy:
   - legacy_mod: legacy_mod.enc, key: INSERT, badge: LEGACY
+  - YIMMENU ESPAÑOL BETA: YimMenu-EspanolBETA.enc (11,283,501 bytes), key: INSERT, badge: BETA v1.0.0, formato v2 GCM
 
 La encriptacion usa AES-256-CBC con clave SHA-256 de 'RTX2026-GTA5-LAUNCHER-SECURE-ENCRYPT-KEY'
 Formato .enc: [iv(16 bytes)][ciphertext]
@@ -128,6 +132,14 @@ Encriptar DLL:
 Verificar desencriptacion:
   node -e "const crypto=require('crypto'),fs=require('fs');const K=crypto.createHash('sha256').update('RTX2026-GTA5-LAUNCHER-SECURE-ENCRYPT-KEY').digest();const v=fs.readFileSync('archivo.enc');const iv=v.slice(0,16),ct=v.slice(16);const dc=crypto.createDecipheriv('aes-256-cbc',K,iv);let r=dc.update(ct);r=Buffer.concat([r,dc.final()]);console.log('MZ:',r[0]===0x4D&&r[1]===0x5A,'Size:',r.length);"
 
+Encriptar DLL (v2 GCM - formato preferido, si data[0]==1):
+  node -e "const crypto=require('crypto'),fs=require('fs');const P='RTX2026-GTA5-LAUNCHER-SECURE-ENCRYPT-KEY';const d=fs.readFileSync('archivo.dll');const salt=crypto.randomBytes(16),nonce=crypto.randomBytes(12);const k=crypto.scryptSync(P,salt,32,{N:1<<14,r:8,p:1});const c=crypto.createCipheriv('aes-256-gcm',k,nonce);const ct=Buffer.concat([c.update(d),c.final()]);fs.writeFileSync('archivo.enc',Buffer.concat([Buffer.from([1]),salt,nonce,c.getAuthTag(),ct]));console.log('CIFRADO:',fs.statSync('archivo.enc').size,'bytes');"
+
+Verificar desencriptacion v2 GCM:
+  node -e "const crypto=require('crypto'),fs=require('fs');const P='RTX2026-GTA5-LAUNCHER-SECURE-ENCRYPT-KEY';const d=fs.readFileSync('archivo.enc');if(d[0]!==1){console.log('no es v2');process.exit(1)}const s=d.subarray(1,17),n=d.subarray(17,29),t=d.subarray(29,45),ct=d.subarray(45);const k=crypto.scryptSync(P,s,32,{N:1<<14,r:8,p:1});const dc=crypto.createDecipheriv('aes-256-gcm',k,n);dc.setAuthTag(t);const r=Buffer.concat([dc.update(ct),dc.final()]);console.log('MZ:',r[0]===0x4D&&r[1]===0x5A,'Size:',r.length);"
+
+NOTA: push a remote 'source' RECHAZADO (historia divergente: launcher/main.js y src_repo/main.js son linajes distintos). Sync de codigo via src_repo/ o merge manual.
+
 ---
 
 ## WORKFLOW PARA HACER UN CAMBIO
@@ -140,7 +152,7 @@ Verificar desencriptacion:
 6. Publish: npx electron-builder --win nsis --publish always (con GH_TOKEN)
 7. Esto crea un tag nuevo en LAUNCHER-RTX y sube el .exe automaticamente
 
-Versionado semver: vX.Y.Z. Actual: v1.6.0.
+Versionado semver: vX.Y.Z. Actual: v1.6.2.
 Solo una rama: main. No hay ramas de feature.
 
 ---
@@ -182,7 +194,7 @@ En el otro PC: npm install && npx electron .
 
 ## QUE HACER AHORA (TAREAS PENDIENTES)
 
-1. Continuar desarrollo del launcher (v1.6.0)
+1. Continuar desarrollo del launcher (v1.6.2)
 2. Carpetas web/: crear nueva interfaz web para reemplazar UI actual
 3. Build YimMenuV2 desde source (D:\YimMenuBuild) - resolver LNK2001 si es necesario
 4. Mantener mods actualizados cuando salgan nuevos nightlies
