@@ -21,8 +21,10 @@ Admin elevation requerida para inyeccion de DLLs.
 REPO DE RELEASE (BINARIOS - donde el usuario descarga):
   https://github.com/Aitor2010aitor/LAUNCHER-RTX
   Remote: origin, Rama: main
-  Version actual: v1.6.2
+  Version actual: v1.6.3
   URL descarga: https://github.com/Aitor2010aitor/LAUNCHER-RTX/releases
+  NOTA: v1.6.2 se RETIRO (release+tag borrados) - tenia renderer.js sin cerrar (SyntaxError)
+  y CSP sin 'unsafe-inline' en style-src (overlay tapaba la UI). No resucitar v1.6.2.
 
 REPO DE SOURCE (codigo fuente - donde subes tus cambios):
   https://github.com/Aitor2010aitor/lancher-codigofunte-
@@ -152,7 +154,7 @@ NOTA: push a remote 'source' RECHAZADO (historia divergente: launcher/main.js y 
 6. Publish: npx electron-builder --win nsis --publish always (con GH_TOKEN)
 7. Esto crea un tag nuevo en LAUNCHER-RTX y sube el .exe automaticamente
 
-Versionado semver: vX.Y.Z. Actual: v1.6.2.
+Versionado semver: vX.Y.Z. Actual: v1.6.3.
 Solo una rama: main. No hay ramas de feature.
 
 ---
@@ -194,7 +196,7 @@ En el otro PC: npm install && npx electron .
 
 ## QUE HACER AHORA (TAREAS PENDIENTES)
 
-1. Continuar desarrollo del launcher (v1.6.2)
+1. Continuar desarrollo del launcher (v1.6.3)
 2. Carpetas web/: crear nueva interfaz web para reemplazar UI actual
 3. Build YimMenuV2 desde source (D:\YimMenuBuild) - resolver LNK2001 si es necesario
 4. Mantener mods actualizados cuando salgan nuevos nightlies
