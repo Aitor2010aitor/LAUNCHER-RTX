@@ -40,13 +40,12 @@ REPO DE SCRIPTS LEGACY:
 
 DISCORD: https://discord.gg/ftJBSMsgAu
 
-TOKEN GITHUB: CADUCADO (da 401 desde 29/09/2026)
-  - El viejo ghp_... del prompt ya NO funciona.
-  - git push funciona igual via Windows Credential Manager (credential.helper = manager).
-  - Para publicar (electron-builder/API) obtener token valido con:
-      $cred = "protocol=https`nhost=github.com`n`n" | git credential fill
-      $env:GH_TOKEN = (($cred | Select-String "password=").Line -replace "^password=","")
-  - Verificar: Invoke-RestMethod https://api.github.com/user -Headers @{Authorization="token $env:GH_TOKEN"}
+TOKEN GITHUB: el token VALIDO esta guardado en el archivo .gh_token (en la carpeta del launcher)
+  - .gh_token esta en .gitignore - NUNCA subirlo a git.
+  - publicar.bat lo lee automaticamente.
+  - Para uso manual: $env:GH_TOKEN = (Get-Content .gh_token -Raw)
+  - Si caduca: obtener nuevo con $cred = "protocol=https`nhost=github.com`n`n" | git credential fill
+  - El token viejo ghp_z5D6... del prompt DA 401 - NO usar.
 
 ---
 
@@ -118,6 +117,11 @@ SHA tracking en .rtx_scripts_meta.json para detectar actualizaciones
 ---
 
 ## COMANDOS ESSENCIALES
+
+PUBLICAR VERSION (usar esto - automatico):
+  publicar.bat           - mira version instalada + releases de GitHub, calcula la
+                           siguiente version, compila y publica (exe + latest.yml + blockmap)
+  publicar.bat /probar   - solo calcula la siguiente version sin compilar ni publicar
 
 Run local:
   Get-Process electron -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Seconds 2; cd C:\Users\Admin\Desktop\launcher\launcher; npx electron .
